@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<div class="aa" id="bb">1</div>
+<p class="aa" id="aa">
+    <span class="aa_1" id="cc">2</span>
+</p>
+<p>3</p>
+<div class="p" id="ff"></div>
+<script src="./js/ADS.js"></script>
+<script>
+    ADS.addEvent('aa', 'click', function(){
+        console.log(this)
+    })
+</script>
+</body>
+</html>
