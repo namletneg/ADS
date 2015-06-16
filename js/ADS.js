@@ -153,5 +153,34 @@
 
     window['ADS']['insertAfter'] = insertAfter;
 
+    function removeChildren(parent) {
+        if (!(parent = $(parent))) {
+            return false;
+        }
+        while (parent.firstChild) {
+            parent.removeChild(parent.firstChild);
+        }
+        return parent;
+    }
 
+    window['ADS']['removeChildren'] = removeChildren;
+
+    function prependChild(parent, newChild) {
+        if (!(parent = $(parent))) {
+            return false;
+        }
+        if (!(newChild = $(newChild))) {
+            return false;
+        }
+        if (parent.firstChild) {
+            //存在子节点，则在该节点前插入
+            parent.insertBefore(newChild, parent.firstChild);
+        } else {
+            //不存在子节点，则直接添加
+            parent.appendChild(newChild);
+        }
+        return parent;
+    }
+
+    window['ADS']['prependChild'] = prependChild;
 })();

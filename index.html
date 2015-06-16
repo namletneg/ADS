@@ -7,15 +7,19 @@
 <body>
 <div class="aa" id="bb">1</div>
 <p class="aa" id="aa">
-    <span class="aa_1" id="cc">2</span>
+    <span class="aa_1" id="cc">1</span>
+    <span class="aa_1" id="dd">2</span>
+    <span class="aa_1" id="ff">3</span>
 </p>
 <p>3</p>
-<div class="p" id="ff"></div>
 <script src="./js/ADS.js"></script>
 <script>
-    ADS.addEvent('aa', 'click', function(){
-        console.log(this)
-    })
+    var node = document.createElement('p'),
+            textNode = document.createTextNode('555');
+
+    node.appendChild(textNode);
+    console.log(ADS.$(123))
+    ADS.prependChild('bb',node)
 </script>
 </body>
 </html>
