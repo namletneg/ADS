@@ -183,4 +183,24 @@
     }
 
     window['ADS']['prependChild'] = prependChild;
+
+    // 修改作用域
+    function bindFunction(obj, func) {
+        return function () {
+            func.apply(obj, arguments);
+        };
+    }
+
+    window['ADS']['bindFunction'] = bindFunction;
+
+    // 获取窗口的大小
+    function getBrowserWindowSize() {
+        var de = document.documentElement;
+        return {
+            width: window.innerWidth || (de && de.clientWidth) || document.body.clientWidth,
+            height: window.innerHeight || (de && de.clientHeight) || document.body.clientHeight
+        }
+    }
+
+    window['ADS']['getBrowserWindowSize'] = getBrowserWindowSize;
 })();
