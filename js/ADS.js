@@ -145,10 +145,12 @@
         if (!(referenceNode = $(referenceNode))) {
             return false
         }
-
-        return referenceNode.parentNode.insertBefore(
-            node, referenceNode.nextSibling
-        );
+        if (referenceNode.nextSibling) {
+            referenceNode.parentNode.insertBefore(node, referenceNode.nextSibling);
+        } else {
+            referenceNode.parentNode.appendChild(node);
+        }
+        return node;
     }
 
     window['ADS']['insertAfter'] = insertAfter;
