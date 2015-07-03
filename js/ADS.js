@@ -7,6 +7,22 @@
         window['ADS'] = {};
     }
 
+    // nodeType常量
+    window['ADS']['node'] = {
+        ELEMENT_NODE: 1,
+        ATTRIBUTE_NODE: 2,
+        TEXT_NODE: 3,
+        CDATA_SECTION_NODE: 4,
+        ENTITY_REFERENCE_NODE: 5,
+        ENTITY_NODE: 6,
+        PROCESSING_INSTRUCTION_NODE: 7,
+        COMMENT_NODE: 8,
+        DOCUMENT_NODE: 9,
+        DOCUMENT_TYPE_NODE: 10,
+        DOCUMENT_FRAGMENT_NODE: 11,
+        NOTATION_NODE: 12
+    };
+
     function isCompatible(other) {
         //使用能力检测来检查必要条件
         if (other === false || !Array.prototype.push || !Object.hasOwnProperty || !document.createElement || !document.getElementsByTagName) {
@@ -206,19 +222,63 @@
 
     window['ADS']['getBrowserWindowSize'] = getBrowserWindowSize;
 
-    // nodeType常量
-    window['ADS']['node'] = {
-        ELEMENT_NODE: 1,
-        ATTRIBUTE_NODE: 2,
-        TEXT_NODE: 3,
-        CDATA_SECTION_NODE: 4,
-        ENTITY_REFERENCE_NODE: 5,
-        ENTITY_NODE: 6,
-        PROCESSING_INSTRUCTION_NODE: 7,
-        COMMENT_NODE: 8,
-        DOCUMENT_NODE: 9,
-        DOCUMENT_TYPE_NODE: 10,
-        DOCUMENT_FRAGMENT_NODE: 11,
-        NOTATION_NODE: 12
+    // 迭代 DOM 树
+    function walkElementsLinear(func, node) {
+        var root = node || window.document,
+            nodes = root.getElementsByTagName('*'),
+            i, len;
+
+        for (i = 0, len = nodes.length; i < len; i++) {
+            func.call(nodes[i]);
+        }
     }
+
+    window['ADS']['walkElementsLinear'] = walkElementsLinear;
+
+    // 递归遍历 DOM , depth、returnedFromParent 没完善
+    function walkTheDOMRecursive(func, node, depth, returnedFromParent) {
+        var root = node || window.document,
+            returnedFromParent = func.call(root, depth++, returnedFromParent),
+            node = root.firstChild;
+
+        while (node) {
+            walkTheDOMRecursive(func, node, depth, returnedFromParent);
+            node = node.nextSibling;
+        }
+    }
+
+    window['ADS']['walkTheDOMRecursive'] = walkTheDOMRecursive;
+
+    // 递归遍历 DOM，查找每个节点的属性
+    function walkTheDOMWithAttributes(node, func, depth, returnedFromParent){
+        var root = node || window.document,
+            returnedFromParent = func(node, depth, returnedFromParent),
+            i, len,
+            attributes;
+
+        if(root.attributes){
+            attributes = root.attributes;
+            for(i = 0, len = attributes.length; i < len; i++){
+                walkTheDOMWithAttributes(attributes[i], func, depth - 1, returnedFromParent);
+            }
+        }
+        if(root.nodeType !== ADS.node.ATTRIBUTE_NODE){
+            node = root.firstChild;
+            while(node){
+                walkTheDOMWithAttributes(node, func, depth, returnedFromParent);
+                node = node.nextSibling;
+            }
+        }
+    }
+
+    window['ADS']['walkTheDOMWithAttributes'] = walkTheDOMWithAttributes;
+
+    // 将 word-word 转换成 wordWord 驼峰命名法
+    function camelize(str) {
+        return str.replace(/-(\w)/g, function (strMatch, p1) {
+            return p1.toUpperCase();
+        });
+    }
+
+    window['ADS']['camelize'] = camelize;
 })();
