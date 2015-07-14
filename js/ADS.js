@@ -237,9 +237,10 @@
 
     // 递归遍历 DOM , depth、returnedFromParent 没完善
     function walkTheDOMRecursive(func, node, depth, returnedFromParent) {
-        var root = node || window.document,
-            returnedFromParent = func.call(root, depth++, returnedFromParent),
-            node = root.firstChild;
+        var root = node || window.document;
+
+        returnedFromParent = func.call(root, depth++, returnedFromParent);
+        node = root.firstChild;
 
         while (node) {
             walkTheDOMRecursive(func, node, depth, returnedFromParent);
@@ -250,21 +251,23 @@
     window['ADS']['walkTheDOMRecursive'] = walkTheDOMRecursive;
 
     // 递归遍历 DOM，查找每个节点的属性
-    function walkTheDOMWithAttributes(node, func, depth, returnedFromParent){
+    function walkTheDOMWithAttributes(node, func, depth, returnedFromParent) {
         var root = node || window.document,
-            returnedFromParent = func(node, depth, returnedFromParent),
             i, len,
             attributes;
 
-        if(root.attributes){
+        returnedFromParent = func(node, depth, returnedFromParent);
+
+
+        if (root.attributes) {
             attributes = root.attributes;
-            for(i = 0, len = attributes.length; i < len; i++){
+            for (i = 0, len = attributes.length; i < len; i++) {
                 walkTheDOMWithAttributes(attributes[i], func, depth - 1, returnedFromParent);
             }
         }
-        if(root.nodeType !== ADS.node.ATTRIBUTE_NODE){
+        if (root.nodeType !== ADS.node.ATTRIBUTE_NODE) {
             node = root.firstChild;
-            while(node){
+            while (node) {
                 walkTheDOMWithAttributes(node, func, depth, returnedFromParent);
                 node = node.nextSibling;
             }
@@ -282,3 +285,49 @@
 
     window['ADS']['camelize'] = camelize;
 })();
+
+// 给 String 对象的原型增加新方法
+//-------------------------------------
+// 重复一个字符串
+if (!String.repeat) {
+    String.prototype.repeat = function (num) {
+        return new Array(num + 1).join(this);
+    }
+}
+
+//  清除结尾和开头处的空白符
+if(!String.trim){
+    String.prototype.trim = function(){
+        return this.replace(/^\s+|\s+$/g, '');
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
