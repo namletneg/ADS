@@ -59,5 +59,4 @@
     }
 
     window['generateDOM'] = generate;
-    console.log(encode("fdadsa"));
 })();

@@ -284,6 +284,18 @@
     }
 
     window['ADS']['camelize'] = camelize;
+
+    // 阻止事件冒泡
+    function stopPropagation(event){
+        event = event || window.event;
+        if(event.stopPropagation){
+            event.stopPropagation();
+        } else{
+            event.cancelBubble = true;
+        }
+    }
+
+    window['stopPropagation'] = stopPropagation;
 })();
 
 // 给 String 对象的原型增加新方法
