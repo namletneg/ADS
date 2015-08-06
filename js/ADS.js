@@ -286,16 +286,79 @@
     window['ADS']['camelize'] = camelize;
 
     // 阻止事件冒泡
-    function stopPropagation(event){
+    function stopPropagation(event) {
         event = event || window.event;
-        if(event.stopPropagation){
+        if (event.stopPropagation) {
             event.stopPropagation();
-        } else{
+        } else {
             event.cancelBubble = true;
         }
     }
 
-    window['stopPropagation'] = stopPropagation;
+    window['ADS']['stopPropagation'] = stopPropagation;
+
+    // 取消默认行为
+    function preventDefault(event) {
+        event = event || window.event;
+        if (event.preventDefault) {
+            event.preventDefault();
+        } else {
+            event.returnValue = false;
+        }
+    }
+
+    window['ADS']['preventDefault'] = preventDefault;
+
+    // 是否嵌入图片前加载
+    function addLoadEvent(loadEvent, waitForImages){
+        if(!isCompatible()){
+            return false;
+        }
+        // 为true，则使用常规的添加事件方法
+        if(waitForImages){
+            return addEvent(window, 'load', loadEvent);
+        }
+        // 否则使用一些不同的方式包装loadEvent（）方法
+        // 以便为this关键字指定正确的内容，
+        // 同时确保事件不会被执行两次
+        var init = function(){
+            // 如果这个函数被调用了则返回
+            if(arguments.callee.done){
+                return;
+            }
+            // 标记这个函数是否运行过
+            arguments.callee.done = true;
+            // 在document的环境中运行加载事件
+            loadEvent.apply(document, arguments);
+        };
+
+        // 为DOMContentLoaded注册事件侦听器
+        if(document.addEventListener){
+            document.addEventListener('DOMContentLoaded', init, false);
+        } else if(/WebKit/i.test(navigator.userAgent)){
+            // 对Safari, 使用setInterval() 函数检测document是否载入完成
+            var _timer = setInterval(function(){
+                if(/loaded|complete/.test(document.readyState)){
+                    clearInterval(_timer);
+                    init();
+                }
+            }, 10);
+        } else{
+            // 对IE 附加一个在加载过程最后执行的脚本，
+            // 并检测该脚本是否载入完成
+            document.write('<script id="__ie_onload" defer></script>');
+            var script = document.getElementById('__ie_onload');
+            script.onreadystatechange = function(){
+                if(this.readyState === 'complete'){
+                    init();
+                }
+            };
+        }
+        return true;
+    }
+
+    window['ADS']['addLoadEvent'] = addLoadEvent;
+
 })();
 
 // 给 String 对象的原型增加新方法
@@ -308,8 +371,8 @@ if (!String.repeat) {
 }
 
 //  清除结尾和开头处的空白符
-if(!String.trim){
-    String.prototype.trim = function(){
+if (!String.trim) {
+    String.prototype.trim = function () {
         return this.replace(/^\s+|\s+$/g, '');
     }
 }
