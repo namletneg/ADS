@@ -285,6 +285,56 @@
 
     window['ADS']['camelize'] = camelize;
 
+    // 是否嵌入图片前加载
+    function addLoadEvent(loadEvent, waitForImages) {
+        if (!isCompatible()) {
+            return false;
+        }
+        // 为true，则使用常规的添加事件方法
+        if (waitForImages) {
+            return addEvent(window, 'load', loadEvent);
+        }
+        // 否则使用一些不同的方式包装loadEvent（）方法
+        // 以便为this关键字指定正确的内容，
+        // 同时确保事件不会被执行两次
+        var init = function () {
+            // 如果这个函数被调用了则返回
+            if (arguments.callee.done) {
+                return;
+            }
+            // 标记这个函数是否运行过
+            arguments.callee.done = true;
+            // 在document的环境中运行加载事件
+            loadEvent.apply(document, arguments);
+        };
+
+        // 为DOMContentLoaded注册事件侦听器
+        if (document.addEventListener) {
+            document.addEventListener('DOMContentLoaded', init, false);
+        } else if (/WebKit/i.test(navigator.userAgent)) {
+            // 对Safari, 使用setInterval() 函数检测document是否载入完成
+            var _timer = setInterval(function () {
+                if (/loaded|complete/.test(document.readyState)) {
+                    clearInterval(_timer);
+                    init();
+                }
+            }, 10);
+        } else {
+            // 对IE 附加一个在加载过程最后执行的脚本，
+            // 并检测该脚本是否载入完成
+            document.write('<script id="__ie_onload" defer></script>');
+            var script = document.getElementById('__ie_onload');
+            script.onreadystatechange = function () {
+                if (this.readyState === 'complete') {
+                    init();
+                }
+            };
+        }
+        return true;
+    }
+
+    window['ADS']['addLoadEvent'] = addLoadEvent;
+
     // 阻止事件冒泡
     function stopPropagation(event) {
         event = event || window.event;
@@ -309,55 +359,129 @@
 
     window['ADS']['preventDefault'] = preventDefault;
 
-    // 是否嵌入图片前加载
-    function addLoadEvent(loadEvent, waitForImages){
-        if(!isCompatible()){
-            return false;
-        }
-        // 为true，则使用常规的添加事件方法
-        if(waitForImages){
-            return addEvent(window, 'load', loadEvent);
-        }
-        // 否则使用一些不同的方式包装loadEvent（）方法
-        // 以便为this关键字指定正确的内容，
-        // 同时确保事件不会被执行两次
-        var init = function(){
-            // 如果这个函数被调用了则返回
-            if(arguments.callee.done){
-                return;
-            }
-            // 标记这个函数是否运行过
-            arguments.callee.done = true;
-            // 在document的环境中运行加载事件
-            loadEvent.apply(document, arguments);
-        };
-
-        // 为DOMContentLoaded注册事件侦听器
-        if(document.addEventListener){
-            document.addEventListener('DOMContentLoaded', init, false);
-        } else if(/WebKit/i.test(navigator.userAgent)){
-            // 对Safari, 使用setInterval() 函数检测document是否载入完成
-            var _timer = setInterval(function(){
-                if(/loaded|complete/.test(document.readyState)){
-                    clearInterval(_timer);
-                    init();
-                }
-            }, 10);
-        } else{
-            // 对IE 附加一个在加载过程最后执行的脚本，
-            // 并检测该脚本是否载入完成
-            document.write('<script id="__ie_onload" defer></script>');
-            var script = document.getElementById('__ie_onload');
-            script.onreadystatechange = function(){
-                if(this.readyState === 'complete'){
-                    init();
-                }
-            };
-        }
-        return true;
+    // 访问事件对象
+    function getEventObject(event) {
+        return event || window.event;
     }
 
-    window['ADS']['addLoadEvent'] = addLoadEvent;
+    window['ADS']['getEventObject'] = getEventObject;
+
+    // 兼容 target
+    function getTarget(event) {
+        event = getEventObject(event);
+
+        // W3C 或 MSIE 的模型
+        var target = event.target || event.srcElement;
+
+        // 如果像Safari中一样是一个文本节点
+        // 重新将目标对象指定为父元素
+        if (target.nodeType === ADS.node.TEXT_NODE) {
+            target = node.parentNode;
+        }
+        return target;
+    }
+
+    window['ADS']['getTarget'] = getTarget;
+
+    // Error
+    // 获取鼠标按下的键值
+    function getMouseButton(event) {
+        event = getEventObject(event);
+
+        var buttons = {
+            left: false,
+            middle: false,
+            right: false
+        };
+
+        // 检查event对象的toString()方法的值，
+        // event.toString() 返回 ‘[object MouseEvent]’
+        // W3C DOM对象有toString()方法，IE8以下没有
+        if (event.toString && event.toString().indexOf('MouseEvent') !== -1) {
+            // W3C方法
+            switch (event.button) {
+                case 0:
+                    buttons.left = true;
+                    break;
+                case 1:
+                    buttons.middle = true;
+                    break;
+                case 2:
+                    buttons.right = true;
+                    break;
+                default:
+                    break;
+
+            }
+        } else if (event.button) {
+            // MSIE方法
+            switch (event.button) {
+                case 1:
+                    buttons.left = true;
+                    break;
+                case 2:
+                    buttons.right = true;
+                    break;
+                case 3:
+                    buttons.left = true;
+                    buttons.right = true;
+                    break;
+                case 4:
+                    buttons.middle = true;
+                    break;
+                case 5:
+                    buttons.left = true;
+                    buttons.middle = true;
+                    break;
+                case 6:
+                    buttons.middle = true;
+                    buttons.right = true;
+                    break;
+                case 7:
+                    buttons.left = true;
+                    buttons.middle = true;
+                    buttons.right = true;
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            return false;
+        }
+        return buttons;
+    }
+
+    window['ADS']['getMouseButton'] = getMouseButton;
+
+    // 获取鼠标相对于文档的位置
+    function getPointerPositionInDocument(event) {
+        event = getEventObject(event);
+
+        var x = event.pageX || (event.clientX + document.documentElement.scrollLeft || document.body.scrollLeft),
+            y = event.pageY || (event.clientY + document.documentElement.scrollTop || document.body.scrollTop);
+
+        return {
+            'x': x,
+            'y': y
+        };
+    }
+
+    window['ADS']['getPointerPositionInDocument'] = getPointerPositionInDocument;
+
+    // 获取 键/码表
+    function getKeyPressed(event) {
+        event = getEventObject(event);
+
+        var code = event.keyCode,
+            value = String.fromCharCode(code);
+
+        return {
+            code: code,
+            value: value
+        };
+    }
+
+    window['ADS']['getKeyPressed'] = getKeyPressed;
 
 })();
 
@@ -371,6 +495,7 @@ if (!String.repeat) {
 }
 
 //  清除结尾和开头处的空白符
+
 if (!String.trim) {
     String.prototype.trim = function () {
         return this.replace(/^\s+|\s+$/g, '');
