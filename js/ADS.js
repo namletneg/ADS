@@ -483,6 +483,29 @@
 
     window['ADS']['getKeyPressed'] = getKeyPressed;
 
+    // 通过ID修改单个元素的样式
+    function setStyleById(element, styles){
+
+        if(!(element = $(element))){
+            return false;
+        }
+        for(var key in styles){
+            if(!styles.hasOwnProperty(key)){
+                continue;
+            }
+            if(element.style.setProperty){
+                // DOM2 样式规范方法
+                element.style.setProperty(key, styles[key]);
+            } else{
+                // 备用方法 IE
+                element.style[camelize(key)] = styles[key];
+            }
+        }
+        return true;
+    }
+
+    window['ADS']['setStyleById'] = setStyleById;
+
 })();
 
 // 给 String 对象的原型增加新方法
