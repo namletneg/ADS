@@ -550,7 +550,123 @@
 
     window['ADS']['getClassNames'] = getClassNames;
 
-    //
+    // 检查是否存在 className
+    function hasClassName(element, className){
+        if(!(element = $(element))){
+            return false;
+        }
+        return !!element.className.match( new RegExp( "(\\s|^)" + className + "(\\s|$)") );
+    }
+
+    window['ADS']['hasClassName'] = hasClassName;
+
+    // 添加 className
+    function addClassName(element, className){
+        if(!(element = $(element))){
+            return false;
+        }
+        if(!hasClassName(element, className)){
+            element.className += (element.className ? ' ': '') + className;
+            return true;
+        }
+        return false;
+    }
+
+    window['ADS']['addClassName'] = addClassName;
+
+    // 删除 className
+    function removeClassName(element, className){
+        if(!(element = $(element))){
+            return false;
+        }
+        if(hasClassName(element, className)){
+            element.className = element.className.replace( new RegExp( "(\\s|^)" + className + "(\\s|$)" ), " " );
+            return true;
+        }
+        return false;
+    }
+
+    window['ADS']['removeClassName'] = removeClassName;
+
+    // 切换 className
+    function toggleClassName(element, className){
+        if(!(element = $(element))){
+            return false;
+        }
+        if(hasClassName(element, className)){
+            removeClassName(element, className);
+        } else{
+            addClassName(element, className);
+        }
+    }
+
+    window['ADS']['toggleClassName'] = toggleClassName;
+
+    // 获取样式表
+    function getStyleSheets(url, media){
+        var styleSheets = document.styleSheets,
+            sheets = [],
+            sheetsMedia,
+            i, len;
+
+        for(i = 0, len = styleSheets.length; i < len; i ++){
+            if(url && styleSheets[i].href.indexOf(url) === -1){
+                continue;
+            }
+            if(media){
+                // 规范化 media字符串
+                media = media.replace(/,\s*/g, ',');
+                if(typeof styleSheets[i].media.mediaText !== 'undefined'){   // 防止 mediaText 为空，用 undefined判断
+                    // DOM方法
+                    sheetsMedia = styleSheets[i].media.mediaText.replace(/,\s*/g, ',');
+                    // Safari 会添加额外的逗号和空格
+                    sheetsMedia = sheetsMedia.replace(/,\s*$/, '');
+                } else{
+                    // MSIE 方法
+                    sheetsMedia = styleSheets[i].media.replace(/,\s*/g, ',');
+                }
+                // 如果Media不匹配跳过
+                if(media !== sheetsMedia){
+                    continue;
+                }
+            }
+            sheets.push(styleSheets[i]);
+        }
+        return sheets;
+    }
+
+    window['ADS']['getStyleSheets'] = getStyleSheets;
+
+    // 添加新样式表
+    function addStyleSheet(url, media){
+        var link;
+        media = media || 'screen';
+        link = document.createElement('link');
+        link.setAttribute('rel', 'stylesheets');
+        link.setAttribute('type', 'text/css');
+        link.setAttribute('url', url);
+        link.setAttribute('media', media);
+        document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    window['ADS']['addStyleSheet'] = addStyleSheet;
+
+    // 删除样式表
+    function removeStyleSheet(url, media){
+        var sheets = getStyleSheets(url, media),
+            i, len, node;
+
+        for(i = 0, len = sheets.length; i < len; i++){
+            node = sheets[i].ownerNode || sheets[i].owningElement;
+            sheets[i].disabled = true;
+            node.parentNode.removeChild(node);
+        }
+    }
+
+    window['ADS']['removeStyleSheet'] = removeStyleSheet;
+
+
+
+
 
 
 
