@@ -115,6 +115,7 @@
             i, len;
 
         parent = parent || document;
+        tag = tag || '*';
         if (!(parent = $(parent))) {
             return false;
         }
@@ -505,6 +506,53 @@
     }
 
     window['ADS']['setStyleById'] = setStyleById;
+
+    // 通过className修改多个元素的样式
+    function setStylesByClassName(parent, tag, className, styles){
+        var elements, i, len;
+
+        if(!(parent = $(parent))){
+            return false;
+        }
+        elements = getElementsByClassName(className, tag, parent);
+        for(i = 0, len = elements.length; i < len; i++){
+            setStyleById(elements[i], styles);
+        }
+        return true;
+    }
+
+    window['ADS']['setStylesByClassName'] = setStylesByClassName;
+
+
+    // 通过tagName修改多个元素的样式
+    function setStylesByTagName(tagName, styles, parent){
+        var elements, i, len;
+
+        parent = $(parent) || document;
+        elements = parent.getElementsByTagName(tagName);
+        for(i = 0, len = elements.length; i < len; i++){
+            setStyleById(elements[i], styles);
+        }
+        return true;
+    }
+
+    window['ADS']['setStylesByTagName'] = setStylesByTagName;
+
+    // 获取包含元素 className 的数组
+    function getClassNames(element){
+        if(!(element = $(element))){
+            return false;
+        }
+        // 用一个空格替换多个空格
+        //  基于空格分割类名
+        return element.className.replace(/\s+/g, ' ').split(' ');
+    }
+
+    window['ADS']['getClassNames'] = getClassNames;
+
+    //
+
+
 
 })();
 
