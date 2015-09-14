@@ -664,8 +664,19 @@
 
     window['ADS']['removeStyleSheet'] = removeStyleSheet;
 
+    // 编辑一条样式规则
+    function editCSSRule(selector, styles, url, media){
 
+    }
 
+    window['ADS']['editCSSRule'] = editCSSRule;
+
+    // 添加一条样式规则
+    function addCSSRule(selector, styles, index, url, media){
+
+    }
+
+    window['ADS']['addCSSRule'] = addCSSRule;
 
 
 
