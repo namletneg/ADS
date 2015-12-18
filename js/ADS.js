@@ -485,19 +485,19 @@
     window['ADS']['getKeyPressed'] = getKeyPressed;
 
     // 通过ID修改单个元素的样式
-    function setStyleById(element, styles){
+    function setStyleById(element, styles) {
 
-        if(!(element = $(element))){
+        if (!(element = $(element))) {
             return false;
         }
-        for(var key in styles){
-            if(!styles.hasOwnProperty(key)){
+        for (var key in styles) {
+            if (!styles.hasOwnProperty(key)) {
                 continue;
             }
-            if(element.style.setProperty){
+            if (element.style.setProperty) {
                 // DOM2 样式规范方法
                 element.style.setProperty(key, styles[key]);
-            } else{
+            } else {
                 // 备用方法 IE
                 element.style[camelize(key)] = styles[key];
             }
@@ -508,14 +508,14 @@
     window['ADS']['setStyleById'] = setStyleById;
 
     // 通过className修改多个元素的样式
-    function setStylesByClassName(parent, tag, className, styles){
+    function setStylesByClassName(parent, tag, className, styles) {
         var elements, i, len;
 
-        if(!(parent = $(parent))){
+        if (!(parent = $(parent))) {
             return false;
         }
         elements = getElementsByClassName(className, tag, parent);
-        for(i = 0, len = elements.length; i < len; i++){
+        for (i = 0, len = elements.length; i < len; i++) {
             setStyleById(elements[i], styles);
         }
         return true;
@@ -525,12 +525,12 @@
 
 
     // 通过tagName修改多个元素的样式
-    function setStylesByTagName(tagName, styles, parent){
+    function setStylesByTagName(tagName, styles, parent) {
         var elements, i, len;
 
         parent = $(parent) || document;
         elements = parent.getElementsByTagName(tagName);
-        for(i = 0, len = elements.length; i < len; i++){
+        for (i = 0, len = elements.length; i < len; i++) {
             setStyleById(elements[i], styles);
         }
         return true;
@@ -539,8 +539,8 @@
     window['ADS']['setStylesByTagName'] = setStylesByTagName;
 
     // 获取包含元素 className 的数组
-    function getClassNames(element){
-        if(!(element = $(element))){
+    function getClassNames(element) {
+        if (!(element = $(element))) {
             return false;
         }
         // 用一个空格替换多个空格
@@ -551,22 +551,22 @@
     window['ADS']['getClassNames'] = getClassNames;
 
     // 检查是否存在 className
-    function hasClassName(element, className){
-        if(!(element = $(element))){
+    function hasClassName(element, className) {
+        if (!(element = $(element))) {
             return false;
         }
-        return !!element.className.match( new RegExp( "(\\s|^)" + className + "(\\s|$)") );
+        return !!element.className.match(new RegExp("(\\s|^)" + className + "(\\s|$)"));
     }
 
     window['ADS']['hasClassName'] = hasClassName;
 
     // 添加 className
-    function addClassName(element, className){
-        if(!(element = $(element))){
+    function addClassName(element, className) {
+        if (!(element = $(element))) {
             return false;
         }
-        if(!hasClassName(element, className)){
-            element.className += (element.className ? ' ': '') + className;
+        if (!hasClassName(element, className)) {
+            element.className += (element.className ? ' ' : '') + className;
             return true;
         }
         return false;
@@ -575,12 +575,12 @@
     window['ADS']['addClassName'] = addClassName;
 
     // 删除 className
-    function removeClassName(element, className){
-        if(!(element = $(element))){
+    function removeClassName(element, className) {
+        if (!(element = $(element))) {
             return false;
         }
-        if(hasClassName(element, className)){
-            element.className = element.className.replace( new RegExp( "(\\s|^)" + className + "(\\s|$)" ), " " );
+        if (hasClassName(element, className)) {
+            element.className = element.className.replace(new RegExp("(\\s|^)" + className + "(\\s|$)"), " ");
             return true;
         }
         return false;
@@ -589,13 +589,13 @@
     window['ADS']['removeClassName'] = removeClassName;
 
     // 切换 className
-    function toggleClassName(element, className){
-        if(!(element = $(element))){
+    function toggleClassName(element, className) {
+        if (!(element = $(element))) {
             return false;
         }
-        if(hasClassName(element, className)){
+        if (hasClassName(element, className)) {
             removeClassName(element, className);
-        } else{
+        } else {
             addClassName(element, className);
         }
     }
@@ -603,30 +603,30 @@
     window['ADS']['toggleClassName'] = toggleClassName;
 
     // 获取样式表
-    function getStyleSheets(url, media){
+    function getStyleSheets(url, media) {
         var styleSheets = document.styleSheets,
             sheets = [],
             sheetsMedia,
             i, len;
 
-        for(i = 0, len = styleSheets.length; i < len; i ++){
-            if(url && styleSheets[i].href.indexOf(url) === -1){
+        for (i = 0, len = styleSheets.length; i < len; i++) {
+            if (url && styleSheets[i].href.indexOf(url) === -1) {
                 continue;
             }
-            if(media){
+            if (media) {
                 // 规范化 media字符串
                 media = media.replace(/,\s*/g, ',');
-                if(typeof styleSheets[i].media.mediaText !== 'undefined'){   // 防止 mediaText 为空，用 undefined判断
+                if (typeof styleSheets[i].media.mediaText !== 'undefined') {   // 防止 mediaText 为空，用 undefined判断
                     // DOM方法
                     sheetsMedia = styleSheets[i].media.mediaText.replace(/,\s*/g, ',');
                     // Safari 会添加额外的逗号和空格
                     sheetsMedia = sheetsMedia.replace(/,\s*$/, '');
-                } else{
+                } else {
                     // MSIE 方法
                     sheetsMedia = styleSheets[i].media.replace(/,\s*/g, ',');
                 }
                 // 如果Media不匹配跳过
-                if(media !== sheetsMedia){
+                if (media !== sheetsMedia) {
                     continue;
                 }
             }
@@ -638,7 +638,7 @@
     window['ADS']['getStyleSheets'] = getStyleSheets;
 
     // 添加新样式表
-    function addStyleSheet(url, media){
+    function addStyleSheet(url, media) {
         var link;
         media = media || 'screen';
         link = document.createElement('link');
@@ -648,14 +648,15 @@
         link.setAttribute('media', media);
         document.getElementsByTagName('head')[0].appendChild(link);
     }
+
     window['ADS']['addStyleSheet'] = addStyleSheet;
 
     // 删除样式表
-    function removeStyleSheet(url, media){
+    function removeStyleSheet(url, media) {
         var sheets = getStyleSheets(url, media),
             i, len, node;
 
-        for(i = 0, len = sheets.length; i < len; i++){
+        for (i = 0, len = sheets.length; i < len; i++) {
             node = sheets[i].ownerNode || sheets[i].owningElement;
             sheets[i].disabled = true;
             node.parentNode.removeChild(node);
@@ -665,21 +666,252 @@
     window['ADS']['removeStyleSheet'] = removeStyleSheet;
 
     // 编辑一条样式规则
-    function editCSSRule(selector, styles, url, media){
+    function editCSSRule(selector, styles, url, media) {
+        var styleSheets = (typeof url === 'object' ? url : getStyleSheets(url, media)),
+            rules,
+            i, len, j, key;
 
+        for (i = 0, len = styleSheets.length; i < len; i++) {
+            // 取规则列表
+            // DOM2样式是 styleSheets[i].cssRules
+            // MSIE方法是 styleSheets[i].rules
+            rules = styleSheets[i].cssRules || styleSheets[i].rules;
+            if (!rules) {
+                continue;
+            }
+
+            // 转换大写形式
+            selector = selector.toUpperCase();
+
+            for (j = 0; j < rules.length; j++) {
+                // 检查是否匹配
+                if (rules[i].selectorText.toUpperCase() == selector) {
+                    for (key in styles) {
+                        if (!styles.hasOwnProperty(key)) {
+                            continue;
+                        }
+                        // 设置新的样式属性
+                        rules[j].style[camelize(key)] = styles[key];
+                    }
+                }
+            }
+        }
     }
 
     window['ADS']['editCSSRule'] = editCSSRule;
 
     // 添加一条样式规则
-    function addCSSRule(selector, styles, index, url, media){
+    function addCSSRule(selector, styles, index, url, media) {
+        var styleSheets,
+            str = '',
+            newIndex,
+            key, i, len;
 
+        for (key in styles) {
+            if (!styles.hasOwnProperty(key)) {
+                continue;
+            }
+            str += key + ':' + styles[key] + ';';
+        }
+
+        styleSheets = (typeof url === 'object' ? url : getStyleSheets(url, media));
+
+        for (i = 0, len = styleSheets.length; i < len; i++) {
+            // 添加规则
+            if (styleSheets[i].insertRule) {
+                // DOM2 样式规则的方法
+                newIndex = (index >= 0 ? index : styleSheets[i].cssRules.length);
+                styleSheets[i].insertRule(selector + '{' + str + '}', newIndex);
+            } else if (styleSheets[i].addRule) {
+                // MSIE 的方法
+                // index = -1 是列表的末尾
+                newIndex = (index >= 0 ? index : -1);
+                styleSheets[i].addRule(selector, str, newIndex);
+            }
+        }
     }
 
     window['ADS']['addCSSRule'] = addCSSRule;
 
+    // 访问元素的样式
+    function getStyle(element, property) {
+        var value, css;
+
+        if (!(element = $(element)) || !property) {
+            return false;
+        }
+
+        value = element.style[camelize(property)];
+        if (!value) {
+            // 取得计算的样式值
+            if (document.defaultView && document.defaultView.getComputedStyle) {
+                // DOM 方法
+                css = document.defaultView.getComputedStyle(element, null);
+                value = css ? css.getPropertyValue(property) : null;
+            } else if (element.currentStyle) {
+                // MSIE 方法
+                value = element.currentStyle[camelize(property)];
+            }
+        }
+
+        // 返回空字符串而不是auto
+        return value === 'auto' ? '' : value;
+    }
+
+    window['ADS']['getStyle'] = getStyle;
 
 
+    // 公共方法
+    // 解析JSON文本
+    // 生成一个对象或数字
+    function parseJSON(s, filter) {
+        var j,
+            walk = function (k, v) {
+                var key;
+                if (v && typeof v === 'object') {
+                    for (key in v) {
+                        if (v.hasOwnProperty(key)) {
+                            v[key] = walk(key, v[key]);
+                        }
+                    }
+                }
+                return filter(k, v);
+            };
+
+        if (/^("(\\.|[^"\\\n\r])*?"|[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t])+?$/.test(s)) {
+            try {
+                j = eval('(' + s + ')');
+            } catch (e) {
+                throw new SyntaxError('parseJSON');
+            }
+        } else {
+            throw new SyntaxError('parseJSON');
+        }
+
+        if (typeof filter === 'function') {
+            j = walk('', j);
+        }
+        return j;
+    }
+
+    // 设置 XMLHttpRequest 对象的各个不同的部分
+    function getRequestObject(url, options) {
+        var req = false;
+
+        if (XMLHttpRequest) {
+            req = new XMLHttpRequest();
+        } else if (ActiveXObject) {
+            req = new ActiveXObject('Microsoft.XMLHTTP');
+        }
+        if (!req) {
+            return false;
+        }
+
+        // 定义默认的选项
+        options = options || {};
+        options.method = options.method || 'GET';
+        options.send = options.send || null;
+
+        // 为请求的每个阶段定义不同的监听器
+        req.onreadystatechange = function () {
+            switch (req.readyState) {
+                case 1:
+                    // 载入中
+                    if (options.loadListener) {
+                        options.loadListener.apply(req, arguments);
+                    }
+                    break;
+                case 2:
+                    // 载入完成
+                    if (options.loadedListener) {
+                        options.loadedListener.apply(req, arguments);
+                    }
+                    break;
+                case 3:
+                    // 交互
+                    if (options.interactiveListener) {
+                        options.interactiveListener.apply(req, arguments);
+                    }
+                    break;
+                case 4:
+                    // 完成
+                    // 如果失败则抛出错误
+                    try {
+                        if (req.status && req.status == 200) {
+                            var contentType = req.getResponseHeader('Content-Type'),
+                            // 头部包含其他字符集，提取所需部分
+                                mimeType = contentType.match(/\s*([^;]+)\s*(;|$)/i)[1];
+
+                            switch (mimeType) {
+                                case 'text/javascript':
+                                case 'application/javascript':
+                                    // 响应是JavaScript,
+                                    // req.responseText作为回调的参数
+                                    if (options.jsResponseListener) {
+                                        options.jsResponseListener.call(req, req.responseText);
+                                    }
+                                    break;
+                                case 'application/json':
+                                    // 响应是JSON，因此需要用匿名函数对 req.responseText 进行解析
+                                    // 以返回作为回调函数的JSON对象
+                                    if (options.jsonResponseListener) {
+                                        var json;
+                                        try {
+                                            json = parseJSON(req.responseText);
+                                        } catch(e){
+                                            json = false;
+                                        }
+                                        options.jsonResponseListener.call(req, json);
+                                    }
+                                    break;
+                                case 'text/xml':
+                                case 'application/xml':
+                                case 'application/xhtml+xml':
+                                    // 响应是xml,
+                                    // req.responseText作为回调的参数
+                                    if(options.xmlResponseListener){
+                                        options.xmlResponseListener.call(req, req.responseXML);
+                                        break;
+                                    }
+                                    break;
+                                case 'text/html':
+                                    if(options.htmlResponseListener){
+                                        options.htmlResponseListener.call(req, req.responseText);
+                                    }
+                                    break;
+                            }
+
+                            // 针对响应成功完成的侦听器
+                            if(options.completeListener){
+                                options.completeListener.apply(req, arguments);
+                            }
+                        } else{
+                            if(options.errorListener){
+                                options.errorListener.apply(req, arguments);
+                            }
+                        }
+                    } catch(e){
+                        // 忽略错误
+                    }
+                    break;
+            }
+        };
+        // 开启请求
+        req.open(options.method, url, true);
+        req.setRequestHeader('X-ADS-Ajax-Request', 'AjaxRequest');
+        return req;
+    }
+
+    window['ADS']['getRequestObject'] = getRequestObject;
+
+    // 封装 ajax 请求
+    function ajaxRequest(url, options){
+        var req = getRequestObject(url, options);
+
+        return req.send(options.send);
+    }
+
+    window['ADS']['ajaxRequest'] = ajaxRequest;
 
 })();
 
