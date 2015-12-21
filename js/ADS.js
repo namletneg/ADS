@@ -763,7 +763,7 @@
 
     // 公共方法
     // 解析JSON文本
-    // 生成一个对象或数字
+    // 生成一个对象或数组
     function parseJSON(s, filter) {
         var j,
             walk = function (k, v) {
@@ -795,6 +795,7 @@
     }
 
     // 设置 XMLHttpRequest 对象的各个不同的部分
+    // jsResponseListener 请求到的字符串参数，需要 eval()执行；
     function getRequestObject(url, options) {
         var req = false;
 
@@ -858,7 +859,7 @@
                                         var json;
                                         try {
                                             json = parseJSON(req.responseText);
-                                        } catch(e){
+                                        } catch (e) {
                                             json = false;
                                         }
                                         options.jsonResponseListener.call(req, json);
@@ -869,28 +870,29 @@
                                 case 'application/xhtml+xml':
                                     // 响应是xml,
                                     // req.responseText作为回调的参数
-                                    if(options.xmlResponseListener){
+                                    if (options.xmlResponseListener) {
                                         options.xmlResponseListener.call(req, req.responseXML);
                                         break;
                                     }
                                     break;
                                 case 'text/html':
-                                    if(options.htmlResponseListener){
+                                    if (options.htmlResponseListener) {
                                         options.htmlResponseListener.call(req, req.responseText);
                                     }
                                     break;
                             }
 
                             // 针对响应成功完成的侦听器
-                            if(options.completeListener){
+                            if (options.completeListener) {
+                                // this 指向 req
                                 options.completeListener.apply(req, arguments);
                             }
-                        } else{
-                            if(options.errorListener){
+                        } else {
+                            if (options.errorListener) {
                                 options.errorListener.apply(req, arguments);
                             }
                         }
-                    } catch(e){
+                    } catch (e) {
                         // 忽略错误
                     }
                     break;
@@ -905,13 +907,156 @@
     window['ADS']['getRequestObject'] = getRequestObject;
 
     // 封装 ajax 请求
-    function ajaxRequest(url, options){
+    function ajaxRequest(url, options) {
         var req = getRequestObject(url, options);
 
         return req.send(options.send);
     }
 
     window['ADS']['ajaxRequest'] = ajaxRequest;
+
+    /* 跨域请求数据 */
+    var // XssHttpRequest 对象的计数器
+        XssHttpRequestCount = 0,
+        XssHttpRequest = function () {
+            this.requestID = 'XSS_HTTP_REQUEST_' + (++XssHttpRequestCount);
+        };
+    XssHttpRequest.prototype = {
+        constructor: XssHttpRequest,
+        url: null,
+        scriptObject: null,
+        responseJSON: null,
+        status: 0,
+        readyState: 0,
+        timeout: 30000,
+        onreadystatechange: function () {
+        },
+        setReadyState: function (newReadyState) {
+            // 如果比当前状态更新
+            // 则只更新就绪状态
+            if (this.readyState < newReadyState || newReadyState === 0) {
+                this.readyState = newReadyState;
+                this.onreadystatechange();
+            }
+        },
+        open: function (url, timeout) {
+            this.timeout = timeout || this.timeout;
+            // 给url添加参数 'XSS_HTTP_REQUEST_CALLBACK'
+            this.url = url + ((url.indexOf('?') !== -1) ? '&' : '?') + 'XSS_HTTP_REQUEST_CALLBACK=' + this.requestID + '_CALLBACK';
+            this.setReadyState(0);
+        },
+        send: function () {
+            var requestObject = this,
+                timeoutWatcher;
+
+            // 创建一个载入外部数据的新script对象
+            requestObject.scriptObject = document.createElement('script');
+            requestObject.scriptObject.setAttribute('id', requestObject.requestID);
+            requestObject.scriptObject.setAttribute('type', 'text/javascript');
+            // 尚未设置scr属性
+
+            // 超时后设置
+            timeoutWatcher = setTimeout(function () {
+                // 在window设置回调函数为空方法
+                window[requestObject.requestID + '_CALLBACK'] = function () {
+                };
+
+                // 移除脚本以防止进一步载入
+                requestObject.scriptObject.parentNode.removeChild(requestObject.scriptObject);
+                // 将状态设置为错误
+                requestObject.status = 2;
+                requestObject.statusText = 'Timeout after' + requestObject.timeout + 'milliseconds';
+
+                // 更新就绪状态
+                requestObject.setReadyState(2);
+                requestObject.setReadyState(3);
+                requestObject.setReadyState(4);
+            }, requestObject.timeout);
+
+            // 设置回调函数
+            window[requestObject.requestID + '_CALLBACK'] = function (JSON) {
+                clearTimeout(timeoutWatcher);
+
+                // 更新就绪状态
+                requestObject.setReadyState(2);
+                requestObject.setReadyState(3);
+
+                // 将状态设置为成功
+                requestObject.responseJSON = JSON;
+                requestObject.status = 1;
+                requestObject.statusText = 'Loaded.';
+
+                // 更新就绪状态
+                requestObject.setReadyState(4);
+            };
+
+            // 设置初始就绪状态
+            requestObject.setReadyState(1);
+
+            // 设置src属性
+            requestObject.scriptObject.setAttribute('scr', requestObject.url);
+            document.getElementsByTagName('body')[0].appendChild(requestObject.scriptObject);
+        }
+    };
+
+    window['ADS']['XssHttpRequest'] = XssHttpRequest;
+
+    // 设置 XssHttpRequest对象的不同部分
+    function getXssRequestObject(url, options) {
+        var req = new XssHttpRequest();
+
+        options = options || {};
+        // 默认超时时间为 30s
+        options.timeout = options.timeout || 30000;
+
+        req.onreadystatechange = function () {
+            switch (req.readyState) {
+                case 1:
+                    // 载入中
+                    if (options.loadListener) {
+                        options.loadListener.apply(req, arguments);
+                    }
+                    break;
+                case 2:
+                    // 载入完成
+                    if (options.loadedListener) {
+                        options.loadedListener.apply(req, arguments);
+                    }
+                    break;
+                case 3:
+                    // 交互
+                    if (options.interactiveListener) {
+                        options.interactiveListener.apply(req, arguments);
+                    }
+                    break;
+                case 4:
+                    // 完成
+                    if (req.status === 1) {
+                        if (options.completeListener) {
+                            options.completeListener.apply(req, arguments);
+                        }
+                    } else {
+                        if (options.errorListener) {
+                            options.errorListener.apply(req, arguments);
+                        }
+                    }
+                    break;
+            }
+        };
+        req.open(url, options.timeout);
+        return req;
+    }
+
+    window['ADS']['getXssRequestObject'] = getXssRequestObject;
+
+    // 发送 XssHttpRequest请求
+    function xssRequest(url, options){
+        var req = getXssRequestObject(url, options);
+        return req.send(null);
+    }
+
+    window['ADS']['xssRequest'] = xssRequest;
+
 
 })();
 
