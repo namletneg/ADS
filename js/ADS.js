@@ -926,6 +926,7 @@
         url: null,
         scriptObject: null,
         responseJSON: null,
+        // status: 1 成功，2 失败
         status: 0,
         readyState: 0,
         timeout: 30000,
@@ -1055,6 +1056,7 @@
         return req.send(null);
     }
 
+    // error
     window['ADS']['xssRequest'] = xssRequest;
 
 
