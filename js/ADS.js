@@ -1051,13 +1051,113 @@
     window['ADS']['getXssRequestObject'] = getXssRequestObject;
 
     // 发送 XssHttpRequest请求
-    function xssRequest(url, options){
+    function xssRequest(url, options) {
         var req = getXssRequestObject(url, options);
         return req.send(null);
     }
 
     // error
     window['ADS']['xssRequest'] = xssRequest;
+
+
+    /* 解决 ajax 后退annual和标签问题 */
+    // 生成回调函数的一个辅助方法
+    function makeCallback(method, target) {
+        return function () {
+            method.apply(target, arguments);
+        }
+    }
+
+    // 一个用来基于 hash 触发注册的方法的URL hash 侦听器
+    var actionPager = {
+        // 前一个 hash
+        lastHash: '',
+        // 为 hash模式注册的方法列表
+        callbacks: [],
+        // Safari历史记录列表
+        safariHistory: false,
+        // 对为IE准备的 iframe 的引用
+        msieHistory: false,
+        // 应该被转换的链接的类名
+        ajaxifyClassName: '',
+        // 应用程序的根目录。当创建 hash 时，它将是被清理后的URL
+        ajaxifyRoot: '',
+
+        init: function (ajaxfyClass, ajaxifyRoot, startingHash) {
+            this.ajaxifyClassName = ajaxfyClass || 'ADSActonLink';
+            this.ajaxifyRoot = ajaxifyRoot || '';
+
+            if(/Safari/i.test(navigator.userAgent)){
+                this.safariHistory = [];
+            } else if(/MSIE/i.test(navigator.userAgent)){
+                // 如果是 MSIE ，添加一个 iframe 以便跟踪重写（override）后退按钮
+                this.msieHistory = document.createElement('iframe');
+                this.msieHistory.setAttribute('id', 'msieHistory');
+                this.msieHistory.setAttribute('name', 'msieHistory');
+                setStyleById(this.msieHistory, {
+                    'width': '100px',
+                    'height': '100px',
+                    'border': '1px solid black',
+                    'visibility': 'visible',
+                    'zIndex': '-1'
+                });
+                document.body.appendChild(this.msieHistory);
+                this.msieHistory = frames['msieHistory'];
+            }
+
+            // 将链接转换为 Ajax 链接
+            this.ajaxifyLinks();
+            // 取得当前的地址
+            var location = this.getLoaction();
+            // 检查地址中是否包含hash（来自书签）
+            // 或者是否已经提供了 hash
+            if(!location.hash && !startingHash){
+                startingHash = 'start';
+            }
+
+            // 按照需要保存 hash
+            var ajaxHash = this.getHashFromURL(location.hash) || startingHash;
+            this.addBackButtonHash(ajaxHash);
+
+            // 添加监视时间以观察地址栏中的变化
+            var watcherCallback = makeCallback(this.watchLocationForChange, this);
+            window.setInterval(watcherCallback, 200);
+        },
+        ajaxifyLinks: function () {
+            // 将链接转换为锚以便 Ajax 进行处理
+            var links = getElementsByClassName(this.ajaxifyClassName, 'a', document);
+
+            for(var i = 0, len = links.length; i < len; i++){
+                if(hasClassName(links[i], 'ADSActionPagerModified')){
+                    continue;
+                }
+                // 将 href 属性转换为 #value 形式
+                links[i].setAttribute('href', this.converURLToHash(links.getAttribute('href')));
+                addClassName(links[i], 'ADSActionPagerModified');
+
+                // 注册单击事件以便在必要时添加历史记录
+                addEvent(links[i], 'click', function () {
+                    if(this.href && this.href.indexOf('#') > -1){
+                        actionPager.addBackButtonHash(actionPager.getHashFromURL(this.href));
+                    }
+                })
+            }
+        },
+        addBackButtonHash: function(ajaxHash){
+            // 保存 hash
+            if(!ajaxHash){
+                return false;
+            }
+            if(this.safariHistory !== false){
+                // 为 Safari 使用特殊数组
+                if(this.safariHistory.length == 0){
+                    this.safariHistory[window.history.length] = ajaxHash;
+                } else{
+                    this.safariHistory[window.history.length + 1] = ajaxHash;
+                }
+            }
+        }
+    };
 
 
 })();
