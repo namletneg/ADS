@@ -1087,9 +1087,9 @@
             this.ajaxifyClassName = ajaxfyClass || 'ADSActonLink';
             this.ajaxifyRoot = ajaxifyRoot || '';
 
-            if(/Safari/i.test(navigator.userAgent)){
+            if (/Safari/i.test(navigator.userAgent)) {
                 this.safariHistory = [];
-            } else if(/MSIE/i.test(navigator.userAgent)){
+            } else if (/MSIE/i.test(navigator.userAgent)) {
                 // 如果是 MSIE ，添加一个 iframe 以便跟踪重写（override）后退按钮
                 this.msieHistory = document.createElement('iframe');
                 this.msieHistory.setAttribute('id', 'msieHistory');
@@ -1108,10 +1108,10 @@
             // 将链接转换为 Ajax 链接
             this.ajaxifyLinks();
             // 取得当前的地址
-            var location = this.getLoaction();
+            var location = this.getLocation();
             // 检查地址中是否包含hash（来自书签）
             // 或者是否已经提供了 hash
-            if(!location.hash && !startingHash){
+            if (!location.hash && !startingHash) {
                 startingHash = 'start';
             }
 
@@ -1127,37 +1127,169 @@
             // 将链接转换为锚以便 Ajax 进行处理
             var links = getElementsByClassName(this.ajaxifyClassName, 'a', document);
 
-            for(var i = 0, len = links.length; i < len; i++){
-                if(hasClassName(links[i], 'ADSActionPagerModified')){
+            for (var i = 0, len = links.length; i < len; i++) {
+                if (hasClassName(links[i], 'ADSActionPagerModified')) {
                     continue;
                 }
                 // 将 href 属性转换为 #value 形式
-                links[i].setAttribute('href', this.converURLToHash(links.getAttribute('href')));
+                links[i].setAttribute('href', this.convertURLToHash(links.getAttribute('href')));
                 addClassName(links[i], 'ADSActionPagerModified');
 
                 // 注册单击事件以便在必要时添加历史记录
                 addEvent(links[i], 'click', function () {
-                    if(this.href && this.href.indexOf('#') > -1){
+                    if (this.href && this.href.indexOf('#') > -1) {
                         actionPager.addBackButtonHash(actionPager.getHashFromURL(this.href));
                     }
                 })
             }
         },
-        addBackButtonHash: function(ajaxHash){
+        addBackButtonHash: function (ajaxHash) {
             // 保存 hash
-            if(!ajaxHash){
+            if (!ajaxHash) {
                 return false;
             }
-            if(this.safariHistory !== false){
+            if (this.safariHistory !== false) {
                 // 为 Safari 使用特殊数组
-                if(this.safariHistory.length == 0){
+                if (this.safariHistory.length == 0) {
                     this.safariHistory[window.history.length] = ajaxHash;
-                } else{
+                } else {
                     this.safariHistory[window.history.length + 1] = ajaxHash;
+                }
+                return true;
+            } else if (this.msieHistory !== false) {
+                // 在MISIE中通过导航iframe
+                this.msieHistory.document.execCommand('Stop');
+                this.msieHistory.location.href = '/fakepage?hash=' + ajaxHash + '&title=' + document.title;
+                return true;
+            } else {
+                // 通过改变地址的值
+                // 使用 makeCallback 包装函数
+                // 以便在超时方法内部使 this， 引用actionPager
+                var timeoutCallback = makeCallback(function () {
+                    if (this.getHashFromURL(window.location.href) != ajaxHash) {
+                        window.location.replace(location.href + '#' + ajaxHash);
+                    }
+                }, this);
+                setTimeout(timeoutCallback, 200);
+                return true;
+            }
+            return false;
+        },
+        watchLocationForChange: function () {
+            var newHash;
+            // 取得新的hash值
+            if (this.safariHistory !== false) {
+                // 在safari中从历史记录数组中取得
+                if (this.safariHistory[history.length]) {
+                    newHash = this.safariHistory[history.length];
+                }
+            } else if (this.msieHistory !== false) {
+                // 在MSIE中从 iframe 的地址中取得
+                newHash = this.msieHistory.location.href.split('&')[0].split('=')[1];
+            } else if (location.hash != '') {
+                // 对其他浏览器从 window.location 中取得
+                newHash = this.getHashFromURL(window.location.href);
+            }
+
+            // 如果新 hash 与最后一次的 hash 不同，则更新页面
+            if (newHash && newHash != this.lastHash) {
+                if (this.msieHistory !== false && this.getHashFromURL(window.location.href) != newHash) {
+                    // 修复MSIE 中的地址栏
+                    // 以便能适当地加上标签（或加入收藏夹）
+                    location.hash = newHash;
+                }
+
+                // 在发生异常的情况下使用 try/catch
+                // 结构尝试执行任何注册的侦听器
+                try {
+                    this.executeListeners(newHash);
+                    // 在通过处理程序添加任何新链接的情况下进行更新
+                    this.ajaxifyLinks();
+                } catch (e) {
+                    // 这里讲捕获到回调函数的任何异常
+                    alert(e);
+                }
+
+                // 将其保存为最后一个hash
+                this.lastHash = newHash;
+            }
+        },
+        register: function (regex, method, context) {
+            var obj = {
+                'regex': regex
+            };
+
+            if (context) {
+                // 一个已经指定的环境
+                obj.callback = function (matches) {
+                    method.apply(context, matches);
+                };
+            } else {
+                // 以window作为环境
+                obj.callback = function (matches) {
+                    method.apply(window, matches);
+                };
+            }
+
+            // 将侦听器添加到回调函数数组中
+            this.callbacks.push(obj);
+        },
+        convertURLToHash: function (url) {
+            if (!url) {
+                // 没有url ，因而返回一个 '#'
+                return '#';
+            } else if (url.indexOf('#') != -1) {
+                // 存在hash
+                return url.split('#')[1];
+            } else {
+                // 如果 URL 中包含域名（MSIE）则去掉它
+                if(url.indexOf('://') != -1){
+                    url = url.match(/:\/\/[^\/]+(.*)/)[1];
+                }
+                // 按照init() 中的约定去掉跟目录
+                return '#' + url.substr(this.ajaxifyRoot.length);
+            }
+        },
+        getHashFromURL: function(url){
+            if(!url || url.indexOf('#') == -1){
+                return '';
+            }
+            return url.split('#')[1];
+        },
+        getLocation: function () {
+            var url, parts,
+                href = window.location.href;
+            // 检查 hash
+            if(!window.location.hash){
+                // 没有则生成一个
+                url = {
+                    host: null,
+                    hash: null
+                };
+
+                if(href.indexOf('#') > -1){
+                    parts = href.split('#')[1];
+                    url.domain = parts[0];
+                    url.hash = parts[1];
+                } else {
+                    url.domain = window.location;
+                }
+                return url;
+            }
+            return window.location;
+        },
+        executeListeners: function (hash) {
+            var matches;
+            // 执行与 hash 匹配的任何侦听器
+            for(var i in this.callbacks){
+                if(matches = hash.match(this.callbacks[i].regex)){
+                    this.callbacks[i].callback(matches);
                 }
             }
         }
     };
+
+    window['ADS']['actionPager'] = actionPager;
 
 
 })();
