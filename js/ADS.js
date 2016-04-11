@@ -1292,6 +1292,122 @@
     window['ADS']['actionPager'] = actionPager;
 
 
+    /* ajax 排队请求 */
+    // 复制对象
+    function clone(myObj){
+        var myNewObj;
+
+        if(typeof myObj !== 'object' || myObj === null){
+            return myObj;
+        }
+
+        myNewObj = new Object();
+        for(var i in myObj){
+            myNewObj[i] = clone(myObj[i]);
+        }
+        return myNewObj;
+    }
+
+    // 用于保存队列的数组
+    var requestQueue = [];
+
+    // 为使 ADS.ajaxRequest 方法启用排队功能的包装对象
+    function ajaxRequestQueue(url, options, queue){
+        queue = queue || 'default';
+
+        // 这个对象将把可选的侦听器包装在另一个函数中
+        // 因此，可选的对象必须是唯一的。否则，如果该方法被调用时
+        // 使用的是共享的可选对象，那么会导致陷入递归中
+        options = clone(options) || {};
+        if(!requestQueue[queue]){
+            requestQueue[queue] = [];
+        }
+
+        // 当前一次请求完成是，需哟使用 completeListener
+        // 调用队列中的下一次请求。如果完成侦听器已经有定义，那么需要首先调用它
+
+        // 取得旧的侦听器
+        var userCompleteListener = options.completeListener;
+        // 添加新侦听器
+        options.completeListener = function(){
+            // 如果存在旧的侦听器则首先调用它
+            if(userCompleteListener){
+                // this 引用的是请求对象
+                userCompleteListener.apply(this, arguments);
+            }
+
+            // 从队列中移除这个请求
+            requestQueue[queue].shift();
+
+            // 调用队列中的下一项
+            if(requestQueue[queue][0]){
+                // 请求保存在 req 属性中，但为防止它是一个POST请求，故也需包含send 选项
+                var q= requestQueue[queue][0].req.send(requestQueue[queue][0].send);
+            }
+        };
+
+        // 如果发生了错误，应该通过调用相应的错误处理方法取消队列中的其他请求
+
+        // 取得旧侦听器
+        var userErrorListener = options.errorListener;
+        // 添加新侦听器
+        options.errorListener = function () {
+            if(userErrorListener){
+                userErrorListener.apply(this, arguments);
+            }
+
+            // 由于已经调用了错误侦听器，故从队列中移除这个请求
+            requestQueue[queue].shift();
+
+            // 由于出错需要取消队列中的其余请求，但首先要调用每一个请求的 errorListener。
+            // 通过调用队列中下一项的错误侦听器就会清除所以排队的请求，
+            // 因为在链中的调用是依次发生的
+
+            // 检测队列中是否还存在请求
+            if(requestQueue[queue].length){
+                // 取得下一项
+                var q = requestQueue[queue].shift();
+
+                // 中断请求
+                q.req.abort();
+
+                // 伪造请求对象，以便 errorListener 认为请求已经完成并相应地运行
+                var fakeRequest = new Object();
+
+                // 将 status设置为0，将 readyState 设置为4
+                // 就好像请求虽然完成但却失败了一样
+                fakeRequest.status = 0;
+                fakeRequest.readyState = 4;
+
+                fakeRequest.responseText = null;
+                fakeRequest.responseXML = null;
+
+                // 设置错误信息，以便需要是提示
+                fakeRequest.statesText = '队列中的请求接受失败';
+
+                // 调用状态改变，如果readyState是4，而 status不是200，则会调用errorListener
+                q.error.apply(fakeRequest);
+            }
+        };
+
+        // 将这个请求添加到队列中
+        requestQueue[queue].push({
+            req: getRequestObject(url, options),
+            send: options.send,
+            error: options.errorListener
+        });
+
+        // 如果队列的长度表明只有一个项（即第一个）则调用请求
+        if(requestQueue[queue].length === 1){
+            ajaxRequest(url, options);
+        }
+    }
+
+    window['ADS']['ajaxRequestQueue'] = ajaxRequestQueue;
+
+
+
+
 })();
 
 // 给 String 对象的原型增加新方法
